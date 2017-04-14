@@ -62,9 +62,11 @@ void maxvaluepart(int *a, unsigned n, void *data) {
 		val += md->vals[k][hist[k] - 1];
 	}
 
-	//printbuf(hist, K + 1, "hist");
-	//printbuf(a, n, NULL, NULL, " = ");
-	//printf("%f\n", val);
+	#ifdef DEBUG
+	printbuf(hist, K + 1, "hist");
+	printbuf(a, n, NULL, NULL, " = ");
+	printf("%f\n", val);
+	#endif
 	if (val > md->maxval) md->maxval = val;
 }
 
@@ -128,11 +130,11 @@ size_t enumerate(int *a, unsigned m, void (*pf)(int *, unsigned, void *), void (
 	}
 }
 
-value maxpartition(const std::vector<value> *vals) {
+value maxpartition(const vector<value> *vals) {
 
 	int a[K + 1];
 	size_t count = 0;
-	maxdata md = { .vals = vals, .maxval = 0 };
+	maxdata md = { .vals = vals, .maxval = -FLT_MAX };
 
 	for (unsigned m = 1; m <= K; ++m) {
 		initialise(a, _N, m);
@@ -141,7 +143,9 @@ value maxpartition(const std::vector<value> *vals) {
 		count += c;
 	}
 
+	#ifndef CSV
 	printf("%zu total integer partition(s)\n", count);
+	#endif
 	return md.maxval;
 }
 
@@ -243,13 +247,20 @@ typedef struct {
 template <typename type>
 void storevals(agent *c, agent nl, const edge *g, const agent *adj, const chunk *l, type *data) {
 
-	const value val = data->cf(c, nl, data->data);
+	const value val = -data->cf(c, nl, data->data);
 	data->vals[*c].push_back(val);
 
 	#ifdef DEBUG
 	printbuf(c + 1, *c, NULL, NULL, " = ");
 	printf("%f\n", val);
 	#endif
+}
+
+__attribute__((always_inline)) inline
+void inplaceinclpfxsum(vector<value>& vec) {
+
+	for (id i = 1; i < vec.size(); ++i)
+		vec[i] += vec[i - 1];
 }
 
 int main(int argc, char *argv[]) {
@@ -287,7 +298,7 @@ int main(int argc, char *argv[]) {
 	printf("}\n\n");
 	#endif
 
-	#ifdef DEBUG
+	#ifndef CSV
 	puts("Adjacency matrix");
 	for (agent i = 0; i < _N; i++)
 		printbuf(g + i * _N, _N, NULL, "% 3u");
@@ -305,14 +316,36 @@ int main(int argc, char *argv[]) {
 	coalitions(g, storevals, &cd, K, l, MAXDRIVERS);
 
 	for (id k = 1; k <= K; ++k)
-		sort(vals[k].begin(), vals[k].end());
+		sort(vals[k].begin(), vals[k].end(), greater<value>());
 
 	#ifdef DEBUG
+	puts("");
 	for (agent k = 1; k <= K; ++k) {
 		printf("%u -> ", k);
 		printvec(vals[k]);
 	}
+	puts("");
 	#endif
+
+	for (id k = 1; k <= K; ++k)
+		inplaceinclpfxsum(vals[k]);
+
+	#ifdef DEBUG
+	for (agent k = 1; k <= K; ++k) {
+		printf("PFX %u -> ", k);
+		printvec(vals[k]);
+	}
+	puts("");
+	#endif
+
+	#ifdef DEBUG
+	puts("");
+	#endif
+
+	#ifndef CSV
+	printf("Upper bound = ");
+	#endif
+	printf("%f\n", maxpartition(vals));
 
 	free(sp);
 	free(g);

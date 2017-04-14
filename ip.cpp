@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
 	coalitions(g, storevals, &cd, K, l, MAXDRIVERS);
 
 	for (id k = 1; k <= K; ++k)
-		std::sort(vals[k].begin(), vals[k].end());
+		sort(vals[k].begin(), vals[k].end());
 
 	#ifdef DEBUG
 	for (agent k = 1; k <= K; ++k) {

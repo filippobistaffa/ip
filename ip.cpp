@@ -143,6 +143,9 @@ value maxpartition(const vector<value> *vals) {
 		count += c;
 	}
 
+	#ifdef DEBUG
+	puts("");
+	#endif
 	#ifndef CSV
 	printf("%zu total integer partition(s)\n", count);
 	#endif
@@ -338,14 +341,12 @@ int main(int argc, char *argv[]) {
 	puts("");
 	#endif
 
-	#ifdef DEBUG
-	puts("");
-	#endif
+	const value output = maxpartition(vals);
 
 	#ifndef CSV
 	printf("Upper bound = ");
 	#endif
-	printf("%f\n", maxpartition(vals));
+	printf("%f\n", output);
 
 	free(sp);
 	free(g);

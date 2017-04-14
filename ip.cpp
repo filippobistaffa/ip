@@ -236,15 +236,20 @@ value randomvalue(agent *c, agent nl, void *data) {
 
 typedef struct {
 	value (*cf)(agent *, agent, void *);
-	const std::vector<value> *vals;
+	std::vector<value> *vals;
 	void *data;
 } coaldata;
 
 template <typename type>
-void maxsr(agent *c, agent nl, const edge *g, const agent *adj, const chunk *l, type *data) {
+void storevals(agent *c, agent nl, const edge *g, const agent *adj, const chunk *l, type *data) {
 
+	const value val = data->cf(c, nl, data->data);
+	data->vals[*c].push_back(val);
+
+	#ifdef DEBUG
 	printbuf(c + 1, *c, NULL, NULL, " = ");
-	printf("%f\n", data->cf(c, nl, data->data));
+	printf("%f\n", val);
+	#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -282,12 +287,14 @@ int main(int argc, char *argv[]) {
 	printf("}\n\n");
 	#endif
 
+	#ifdef DEBUG
 	puts("Adjacency matrix");
 	for (agent i = 0; i < _N; i++)
 		printbuf(g + i * _N, _N, NULL, "% 3u");
 	puts("");
 	printbuf(la, _N, "l");
 	puts("");
+	#endif
 
 	vector<value> vals[K + 1];
 	coaldata cd;
@@ -295,7 +302,17 @@ int main(int argc, char *argv[]) {
 	cd.cf = srvalue;
 	cd.data = sp;
 
-	coalitions(g, maxsr, &cd, K, l, MAXDRIVERS);
+	coalitions(g, storevals, &cd, K, l, MAXDRIVERS);
+
+	for (id k = 1; k <= K; ++k)
+		std::sort(vals[k].begin(), vals[k].end());
+
+	#ifdef DEBUG
+	for (agent k = 1; k <= K; ++k) {
+		printf("%u -> ", k);
+		printvec(vals[k]);
+	}
+	#endif
 
 	free(sp);
 	free(g);
